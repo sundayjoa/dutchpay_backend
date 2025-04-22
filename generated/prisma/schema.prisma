@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//User(사용자)
+model User {
+  id           String   @id @default(uuid())
+  kakaoId      String   @unique
+  nickname     String
+  profileImage String?
+  createdAt    DateTime @default(now())
+
+  settlements Settlement[]        @relation("UserSettlements")
+  histories   SettlementHistory[]
+}
+
+//Settlement(정산방)
+model Settlement {
+  id          String   @id @default(uuid())
+  title       String
+  totalAmount Int
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  owner        User                @relation("UserSettlements", fields: [ownerId], references: [id])
+  participants Participant[]
+  histories    SettlementHistory[]
+}
+
+//Participant(참여자)
+model Participant {
+  id            String  @id @default(uuid())
+  settlementId  String
+  name          String
+  accountNumber String?
+  accountBank   String?
+  adjustAmount  Int
+  finalAmount   Int
+  isPaid        Boolean @default(false)
+  kakaoUserId   String?
+
+  settlement Settlement @relation(fields: [settlementId], references: [id])
+}
+
+//SettlementHistory(정산 기록)
+model SettlementHistory {
+  id           String   @id @default(uuid())
+  userId       String
+  settlementId String
+  title        String
+  summary      String
+  savedAt      DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id])
+  settlement Settlement @relation(fields: [settlementId], references: [id])
+}
